@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Java Program Simulator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        };
+    </script>
+</head>
+<body class="bg-[#0f172a] text-slate-200 font-sans min-h-screen flex flex-col selection:bg-emerald-500/30 selection:text-emerald-200">
+
+    <!-- Top Header -->
+    <header class="border-b border-slate-800 bg-[#1e293b]/80 backdrop-blur-md sticky top-0 z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md shadow-emerald-500/20">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+                <h1 class="text-sm sm:text-base font-semibold text-white tracking-tight">Java Program Simulator</h1>
+            </div>
+
+            <!-- Runtime Status Indicator -->
+            <div class="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900/90 border border-slate-700/70 text-xs font-medium">
+                <span id="statusDot" class="w-2 h-2 rounded-full bg-slate-500 transition-colors duration-200"></span>
+                <span id="statusText" class="text-slate-300">Idle</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Split-Screen Workspace -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 items-stretch">
+
+            <!-- LEFT PANEL: Java Source Code Window -->
+            <section class="flex flex-col rounded-2xl bg-[#1e293b] border border-slate-700/80 shadow-2xl overflow-hidden">
+                <!-- Code Window Header -->
+                <div class="flex items-center justify-between gap-2 px-3.5 py-2.5 bg-slate-900/80 border-b border-slate-700/80">
+                    <div class="flex items-center gap-2.5">
+                        <div class="flex items-center gap-1.5">
+                            <span class="px-1.5 py-0.5 text-[10px] font-mono font-semibold rounded bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                                JAVA
+                            </span>
+                            <span class="text-xs font-mono font-medium text-slate-300">Main.java</span>
+                        </div>
+
+                        <!-- Compact Numerical Snippet Selector -->
+                        <div class="relative inline-block">
+                            <select id="snippetSelect" aria-label="Select code snippet"
+                                class="min-w-fit appearance-none bg-slate-800 hover:bg-slate-700/90 text-slate-100 text-xs font-mono font-medium pl-2.5 pr-8 py-1.5 rounded-lg border border-slate-600/80 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/50 transition-colors cursor-pointer">
+                                <option value="snippet1" selected>Snippet 1</option>
+                                <option value="snippet2">Snippet 2</option>
+                                <option value="snippet3">Snippet 3</option>
+                            </select>
+                            <svg class="w-3.5 h-3.5 text-slate-400 pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Copy Button -->
+                    <div class="flex items-center gap-2 shrink-0">
+                        <span id="copyFeedback" class="text-xs text-emerald-400 opacity-0 transition-opacity duration-200">Copied!</span>
+                        <button id="copyBtn" type="button" title="Copy Java code"
+                            class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-600/80 transition-all active:scale-95 cursor-pointer">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
+                            </svg>
+                            <span>Copy</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Code Viewer Area -->
+                <div class="flex-1 px-2 py-4 sm:px-3 sm:py-5 overflow-x-auto font-mono text-[clamp(11.5px,1.02vw,13.5px)] leading-6 flex flex-col justify-between">
+                    <div id="codeLinesContainer" class="space-y-1 w-full"></div>
+
+                    <!-- Footer Legend -->
+                    <div class="mt-8 pt-3.5 border-t border-slate-700/70 flex items-center justify-between gap-2 text-xs text-slate-400 font-sans">
+                        <div class="flex items-center gap-2">
+                            <span class="inline-block w-2.5 h-2.5 rounded-sm bg-emerald-500/25 border border-emerald-400"></span>
+                            <span>Active executing line</span>
+                        </div>
+                        <span class="font-mono text-[11px] text-slate-500">Java SE</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- RIGHT PANEL: Mock Terminal Window -->
+            <section class="flex flex-col rounded-2xl bg-[#090d16] border border-slate-700/80 shadow-2xl overflow-hidden min-h-[340px] sm:min-h-[400px]">
+                <!-- Terminal Header with Prominent Green RUN Button on Top-Right -->
+                <div class="flex items-center justify-between gap-3 px-3.5 py-2.5 bg-[#131a29] border-b border-slate-800 select-none">
+                    <div class="flex items-center gap-2.5">
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-rose-500/80"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
+                        </div>
+                        <span class="text-xs font-mono text-slate-400">Terminal — java Main</span>
+                    </div>
+
+                    <!-- Action Controls (Stop + Prominent Green RUN) -->
+                    <div class="flex items-center gap-2">
+                        <button id="stopBtn" type="button" disabled
+                            class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 bg-slate-800/80 border border-slate-700 disabled:opacity-35 disabled:cursor-not-allowed enabled:hover:bg-rose-500/20 enabled:hover:text-rose-300 enabled:hover:border-rose-500/40 transition-all cursor-pointer">
+                            <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24">
+                                <rect x="6" y="6" width="12" height="12" rx="1"></rect>
+                            </svg>
+                            <span>Stop</span>
+                        </button>
+
+                        <button id="runBtn" type="button"
+                            class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg font-semibold text-xs sm:text-sm text-white bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 shadow-lg shadow-emerald-600/25 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-400">
+                            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z"></path>
+                            </svg>
+                            <span id="runBtnLabel">RUN</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Terminal Output Viewport (Top-Left Aligned, Non-Interactive When Idle) -->
+                <div id="terminalScreen"
+                    class="flex-1 flex flex-col justify-start items-start p-4 sm:p-5 font-mono text-sm sm:text-[15px] leading-relaxed text-slate-100 overflow-y-auto whitespace-pre-wrap break-words">
+                    <!-- Static Idle State -->
+                    <div id="idlePlaceholder" class="text-left text-slate-500 select-none pointer-events-none">
+                        <p class="text-xs sm:text-sm">Console idle.</p>
+                        <p class="text-xs text-slate-600 mt-1">Press <span class="text-emerald-500 font-semibold">RUN</span> to start execution.</p>
+                    </div>
+
+                    <!-- Live Console Stream -->
+                    <div id="consoleOutput" class="hidden w-full text-left"></div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Hidden textarea for reliable clipboard copying inside iframes -->
+    <textarea id="clipboardHelper" class="sr-only" aria-hidden="true"></textarea>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const snippetSelect = document.getElementById('snippetSelect');
+            const codeLinesContainer = document.getElementById('codeLinesContainer');
+            const runBtn = document.getElementById('runBtn');
+            const runBtnLabel = document.getElementById('runBtnLabel');
+            const stopBtn = document.getElementById('stopBtn');
+            const copyBtn = document.getElementById('copyBtn');
+            const copyFeedback = document.getElementById('copyFeedback');
+            const clipboardHelper = document.getElementById('clipboardHelper');
+
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+
+            const terminalScreen = document.getElementById('terminalScreen');
+            const idlePlaceholder = document.getElementById('idlePlaceholder');
+            const consoleOutput = document.getElementById('consoleOutput');
+
+            const TOKEN_STYLES = {
+                kw: 'text-purple-400 font-medium',
+                type: 'text-amber-300',
+                cls: 'text-sky-300',
+                fn: 'text-blue-400',
+                str: 'text-emerald-400',
+                num: 'text-orange-400',
+                op: 'text-cyan-400',
+                punc: 'text-slate-400',
+                brace: 'text-amber-300',
+                paren: 'text-purple-300',
+                ident: 'text-slate-100'
+            };
+
+            const SNIPPETS = {
+                snippet1: {
+                    lines: [
+                        'for (int i = 0; i < 20; i++) {',
+                        '    System.out.println(i++);',
+                        '}'
+                    ],
+                    tokens: [
+                        [
+                            ['kw', 'for'], ['ident', ' '], ['brace', '('], ['kw', 'int'], ['ident', ' i '],
+                            ['op', '='], ['ident', ' '], ['num', '0'], ['punc', ';'], ['ident', ' i '],
+                            ['op', '<'], ['ident', ' '], ['num', '20'], ['punc', ';'], ['ident', ' i'],
+                            ['op', '++'], ['brace', ')'], ['ident', ' '], ['brace', '{']
+                        ],
+                        [
+                            ['ident', '    '], ['cls', 'System'], ['punc', '.'], ['cls', 'out'], ['punc', '.'],
+                            ['fn', 'println'], ['paren', '('], ['ident', 'i'], ['op', '++'], ['paren', ')'],
+                            ['punc', ';']
+                        ],
+                        [
+                            ['brace', '}']
+                        ]
+                    ]
+                },
+                snippet2: {
+                    lines: [
+                        'System.out.print("Enter a word or phrase: ");',
+                        'String word = kbScanner.nextLine();',
+                        '',
+                        'for (int i = 0; i < word.length(); i++) {',
+                        '    System.out.println(i + " : " + word.substring(i, i++));',
+                        '}'
+                    ],
+                    tokens: [
+                        [
+                            ['cls', 'System'], ['punc', '.'], ['cls', 'out'], ['punc', '.'],
+                            ['fn', 'print'], ['brace', '('], ['str', '"Enter a word or phrase: "'],
+                            ['brace', ')'], ['punc', ';']
+                        ],
+                        [
+                            ['type', 'String'], ['ident', ' word '], ['op', '='], ['ident', ' kbScanner'],
+                            ['punc', '.'], ['fn', 'nextLine'], ['brace', '()'], ['punc', ';']
+                        ],
+                        [
+                            ['ident', ' ']
+                        ],
+                        [
+                            ['kw', 'for'], ['ident', ' '], ['brace', '('], ['kw', 'int'], ['ident', ' i '],
+                            ['op', '='], ['ident', ' '], ['num', '0'], ['punc', ';'], ['ident', ' i '],
+                            ['op', '<'], ['ident', ' word'], ['punc', '.'], ['fn', 'length'], ['paren', '()'],
+                            ['punc', ';'], ['ident', ' i'], ['op', '++'], ['brace', ')'], ['ident', ' '],
+                            ['brace', '{']
+                        ],
+                        [
+                            ['ident', '    '], ['cls', 'System'], ['punc', '.'], ['cls', 'out'], ['punc', '.'],
+                            ['fn', 'println'], ['paren', '('], ['ident', 'i '], ['op', '+'], ['ident', ' '],
+                            ['str', '" : "'], ['ident', ' '], ['op', '+'], ['ident', ' word'], ['punc', '.'],
+                            ['fn', 'substring'], ['cls', '('], ['ident', 'i'], ['punc', ','], ['ident', ' i'],
+                            ['op', '++'], ['cls', ')'], ['paren', ')'], ['punc', ';']
+                        ],
+                        [
+                            ['brace', '}']
+                        ]
+                    ]
+                },
+                snippet3: {
+                    lines: [
+                        'System.out.print("Enter a word or phrase: ");',
+                        'String word = kbScanner.nextLine();',
+                        '',
+                        'for (int i = 0; i < word.length(); i++) {',
+                        '    System.out.println(i + " : " + word.substring(i, i + 1));',
+                        '}'
+                    ],
+                    tokens: [
+                        [
+                            ['cls', 'System'], ['punc', '.'], ['cls', 'out'], ['punc', '.'],
+                            ['fn', 'print'], ['brace', '('], ['str', '"Enter a word or phrase: "'],
+                            ['brace', ')'], ['punc', ';']
+                        ],
+                        [
+                            ['type', 'String'], ['ident', ' word '], ['op', '='], ['ident', ' kbScanner'],
+                            ['punc', '.'], ['fn', 'nextLine'], ['brace', '()'], ['punc', ';']
+                        ],
+                        [
+                            ['ident', ' ']
+                        ],
+                        [
+                            ['kw', 'for'], ['ident', ' '], ['brace', '('], ['kw', 'int'], ['ident', ' i '],
+                            ['op', '='], ['ident', ' '], ['num', '0'], ['punc', ';'], ['ident', ' i '],
+                            ['op', '<'], ['ident', ' word'], ['punc', '.'], ['fn', 'length'], ['paren', '()'],
+                            ['punc', ';'], ['ident', ' i'], ['op', '++'], ['brace', ')'], ['ident', ' '],
+                            ['brace', '{']
+                        ],
+                        [
+                            ['ident', '    '], ['cls', 'System'], ['punc', '.'], ['cls', 'out'], ['punc', '.'],
+                            ['fn', 'println'], ['paren', '('], ['ident', 'i '], ['op', '+'], ['ident', ' '],
+                            ['str', '" : "'], ['ident', ' '], ['op', '+'], ['ident', ' word'], ['punc', '.'],
+                            ['fn', 'substring'], ['cls', '('], ['ident', 'i'], ['punc', ','], ['ident', ' i '],
+                            ['op', '+'], ['ident', ' '], ['num', '1'], ['cls', ')'], ['paren', ')'], ['punc', ';']
+                        ],
+                        [
+                            ['brace', '}']
+                        ]
+                    ]
+                }
+            };
+
+            let activeSnippetKey = 'snippet1';
+            let isRunning = false;
+            let currentRunId = 0;
+            let activeInputElement = null;
+
+            function renderCodeLines(snippetKey) {
+                const snippet = SNIPPETS[snippetKey] || SNIPPETS.snippet1;
+                codeLinesContainer.innerHTML = '';
+
+                snippet.tokens.forEach((lineTokens, idx) => {
+                    const lineNum = idx + 1;
+
+                    const row = document.createElement('div');
+                    row.id = `code-line-${lineNum}`;
+                    row.className = 'code-line flex items-center px-1.5 py-0.5 rounded-md transition-colors duration-150 border-l-2 border-transparent';
+
+                    const numSpan = document.createElement('span');
+                    numSpan.className = 'w-5 shrink-0 select-none text-slate-500 text-right pr-2 text-[11px]';
+                    numSpan.textContent = String(lineNum);
+
+                    const codeEl = document.createElement('code');
+                    codeEl.className = 'whitespace-pre';
+
+                    lineTokens.forEach(([tokenType, text]) => {
+                        const span = document.createElement('span');
+                        span.className = TOKEN_STYLES[tokenType] || TOKEN_STYLES.ident;
+                        span.textContent = text;
+                        codeEl.appendChild(span);
+                    });
+
+                    row.appendChild(numSpan);
+                    row.appendChild(codeEl);
+                    codeLinesContainer.appendChild(row);
+                });
+            }
+
+            function setStatus(state, label) {
+                statusText.textContent = label;
+                statusDot.className = 'w-2 h-2 rounded-full transition-colors duration-200 ';
+                if (state === 'running') {
+                    statusDot.className += 'bg-emerald-400 animate-pulse';
+                } else if (state === 'waiting') {
+                    statusDot.className += 'bg-amber-400 animate-pulse';
+                } else if (state === 'finished') {
+                    statusDot.className += 'bg-sky-400';
+                } else {
+                    statusDot.className += 'bg-slate-500';
+                }
+            }
+
+            function highlightCodeLine(lineNumber) {
+                const allLines = codeLinesContainer.querySelectorAll('.code-line');
+                allLines.forEach((el) => {
+                    el.classList.remove('bg-emerald-500/15', 'border-emerald-400');
+                    el.classList.add('border-transparent');
+                });
+
+                if (lineNumber !== null) {
+                    const activeEl = document.getElementById(`code-line-${lineNumber}`);
+                    if (activeEl) {
+                        activeEl.classList.remove('border-transparent');
+                        activeEl.classList.add('bg-emerald-500/15', 'border-emerald-400');
+                    }
+                }
+            }
+
+            function appendTerminalText(text, className = 'text-slate-100') {
+                const span = document.createElement('span');
+                span.className = className;
+                span.textContent = text;
+                consoleOutput.appendChild(span);
+                terminalScreen.scrollTop = terminalScreen.scrollHeight;
+            }
+
+            function sleep(ms, runId) {
+                return new Promise((resolve, reject) => {
+                    setTimeout(() => {
+                        if (runId !== currentRunId || !isRunning) {
+                            reject(new Error('EXECUTION_CANCELLED'));
+                        } else {
+                            resolve();
+                        }
+                    }, ms);
+                });
+            }
+
+            function waitForTerminalInput(runId) {
+                return new Promise((resolve, reject) => {
+                    if (runId !== currentRunId || !isRunning) {
+                        reject(new Error('EXECUTION_CANCELLED'));
+                        return;
+                    }
+
+                    const inputWrapper = document.createElement('span');
+                    inputWrapper.className = 'inline-flex items-center align-baseline min-w-[140px] max-w-full';
+
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.autocomplete = 'off';
+                    input.spellcheck = false;
+                    input.setAttribute('aria-label', 'Terminal standard input');
+                    input.placeholder = 'type & press Enter';
+                    input.className = 'bg-transparent border-b border-emerald-400/80 focus:border-emerald-400 text-emerald-300 placeholder:text-slate-600 font-mono text-sm sm:text-[15px] focus:outline-none px-0.5 py-0 w-44 sm:w-60 caret-emerald-400';
+
+                    inputWrapper.appendChild(input);
+                    consoleOutput.appendChild(inputWrapper);
+                    activeInputElement = input;
+
+                    setTimeout(() => {
+                        if (activeInputElement === input) {
+                            input.focus();
+                        }
+                    }, 30);
+
+                    const onKeyDown = (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (runId !== currentRunId || !isRunning) {
+                                reject(new Error('EXECUTION_CANCELLED'));
+                                return;
+                            }
+                            const value = input.value;
+                            input.removeEventListener('keydown', onKeyDown);
+                            activeInputElement = null;
+
+                            const echoSpan = document.createElement('span');
+                            echoSpan.className = 'text-emerald-300';
+                            echoSpan.textContent = `${value}\n`;
+                            inputWrapper.replaceWith(echoSpan);
+
+                            resolve(value);
+                        }
+                    };
+
+                    input.addEventListener('keydown', onKeyDown);
+                });
+            }
+
+            function stopExecution(userInitiated = true) {
+                currentRunId++;
+                isRunning = false;
+
+                if (activeInputElement) {
+                    const lockedVal = activeInputElement.value;
+                    const parent = activeInputElement.parentElement;
+                    if (parent) {
+                        const span = document.createElement('span');
+                        span.className = 'text-emerald-300/70';
+                        span.textContent = `${lockedVal}\n`;
+                        parent.replaceWith(span);
+                    }
+                    activeInputElement = null;
+                }
+
+                highlightCodeLine(null);
+                stopBtn.disabled = true;
+                runBtnLabel.textContent = 'RUN';
+
+                if (userInitiated) {
+                    appendTerminalText('\n[Process interrupted by user]\n', 'text-rose-400/90 text-xs');
+                    setStatus('idle', 'Stopped');
+                }
+            }
+
+            function resetTerminalToIdle() {
+                currentRunId++;
+                isRunning = false;
+                activeInputElement = null;
+                highlightCodeLine(null);
+
+                stopBtn.disabled = true;
+                runBtnLabel.textContent = 'RUN';
+                consoleOutput.innerHTML = '';
+                consoleOutput.classList.add('hidden');
+                idlePlaceholder.classList.remove('hidden');
+                setStatus('idle', 'Idle');
+            }
+
+            // Snippet 1: for (int i = 0; i < 20; i++) { System.out.println(i++); }
+            async function executeSnippet1(runId) {
+                setStatus('running', 'Running');
+                let i = 0;
+
+                while (true) {
+                    highlightCodeLine(1);
+                    await sleep(200, runId);
+
+                    if (!(i < 20)) {
+                        break;
+                    }
+
+                    highlightCodeLine(2);
+                    await sleep(220, runId);
+
+                    const printedValue = i;
+                    i = i + 1;
+                    appendTerminalText(`${printedValue}\n`, 'text-slate-100');
+
+                    highlightCodeLine(1);
+                    await sleep(130, runId);
+                    i = i + 1;
+                }
+
+                highlightCodeLine(3);
+                await sleep(180, runId);
+            }
+
+            // Snippet 2: Buggy String loop with word.substring(i, i++)
+            async function executeSnippet2(runId) {
+                setStatus('running', 'Running');
+                highlightCodeLine(1);
+                await sleep(200, runId);
+                appendTerminalText('Enter a word or phrase: ', 'text-slate-100');
+
+                await sleep(160, runId);
+                highlightCodeLine(2);
+                setStatus('waiting', 'Waiting for input...');
+                const word = await waitForTerminalInput(runId);
+
+                if (runId !== currentRunId || !isRunning) {
+                    return;
+                }
+
+                setStatus('running', 'Running');
+                let i = 0;
+
+                while (true) {
+                    highlightCodeLine(4);
+                    await sleep(240, runId);
+
+                    if (!(i < word.length)) {
+                        break;
+                    }
+
+                    highlightCodeLine(5);
+                    await sleep(260, runId);
+
+                    // Java left-to-right argument evaluation:
+                    // 1. i evaluates to oldI
+                    // 2. word.substring(i, i++) evaluates first arg as oldI, second arg as oldI, then increments i
+                    const oldI = i;
+                    const subResult = word.substring(oldI, oldI);
+                    i = i + 1;
+
+                    appendTerminalText(`${oldI} : ${subResult}\n`, 'text-slate-100');
+
+                    // Loop update step: i++
+                    highlightCodeLine(4);
+                    await sleep(150, runId);
+                    i = i + 1;
+                }
+
+                highlightCodeLine(6);
+                await sleep(200, runId);
+            }
+
+            // Snippet 3: Corrected String loop with word.substring(i, i + 1)
+            async function executeSnippet3(runId) {
+                setStatus('running', 'Running');
+                highlightCodeLine(1);
+                await sleep(200, runId);
+                appendTerminalText('Enter a word or phrase: ', 'text-slate-100');
+
+                await sleep(160, runId);
+                highlightCodeLine(2);
+                setStatus('waiting', 'Waiting for input...');
+                const word = await waitForTerminalInput(runId);
+
+                if (runId !== currentRunId || !isRunning) {
+                    return;
+                }
+
+                setStatus('running', 'Running');
+                let i = 0;
+
+                while (true) {
+                    highlightCodeLine(4);
+                    await sleep(240, runId);
+
+                    if (!(i < word.length)) {
+                        break;
+                    }
+
+                    highlightCodeLine(5);
+                    await sleep(260, runId);
+
+                    const subResult = word.substring(i, i + 1);
+                    appendTerminalText(`${i} : ${subResult}\n`, 'text-slate-100');
+
+                    highlightCodeLine(4);
+                    await sleep(150, runId);
+                    i = i + 1;
+                }
+
+                highlightCodeLine(6);
+                await sleep(200, runId);
+            }
+
+            async function runSimulation() {
+                currentRunId++;
+                const runId = currentRunId;
+                isRunning = true;
+                activeInputElement = null;
+
+                stopBtn.disabled = false;
+                runBtnLabel.textContent = 'RESTART';
+                idlePlaceholder.classList.add('hidden');
+                consoleOutput.classList.remove('hidden');
+                consoleOutput.innerHTML = '';
+
+                try {
+                    if (activeSnippetKey === 'snippet1') {
+                        await executeSnippet1(runId);
+                    } else if (activeSnippetKey === 'snippet2') {
+                        await executeSnippet2(runId);
+                    } else {
+                        await executeSnippet3(runId);
+                    }
+
+                    if (runId !== currentRunId || !isRunning) {
+                        return;
+                    }
+
+                    highlightCodeLine(null);
+                    appendTerminalText('\n[Process finished with exit code 0]', 'text-slate-500 text-xs');
+                    isRunning = false;
+                    stopBtn.disabled = true;
+                    runBtnLabel.textContent = 'RUN';
+                    setStatus('finished', 'Finished');
+                } catch (err) {
+                    if (err && err.message !== 'EXECUTION_CANCELLED') {
+                        console.error('Simulation error:', err);
+                    }
+                }
+            }
+
+            // Initial render
+            renderCodeLines(activeSnippetKey);
+
+            // Terminal remains non-interactive unless awaiting Scanner input
+            terminalScreen.addEventListener('click', () => {
+                if (isRunning && activeInputElement) {
+                    activeInputElement.focus();
+                }
+            });
+
+            // Snippet selector change
+            snippetSelect.addEventListener('change', (e) => {
+                activeSnippetKey = e.target.value;
+                renderCodeLines(activeSnippetKey);
+                resetTerminalToIdle();
+            });
+
+            // RUN / RESTART button
+            runBtn.addEventListener('click', () => {
+                runSimulation();
+            });
+
+            // Stop button
+            stopBtn.addEventListener('click', () => {
+                if (isRunning) {
+                    stopExecution(true);
+                }
+            });
+
+            // Copy button
+            copyBtn.addEventListener('click', () => {
+                try {
+                    const currentSnippet = SNIPPETS[activeSnippetKey] || SNIPPETS.snippet1;
+                    clipboardHelper.value = currentSnippet.lines.join('\n');
+                    clipboardHelper.select();
+                    clipboardHelper.setSelectionRange(0, 99999);
+                    document.execCommand('copy');
+
+                    copyFeedback.classList.remove('opacity-0');
+                    setTimeout(() => {
+                        copyFeedback.classList.add('opacity-0');
+                    }, 1800);
+                } catch (e) {
+                    console.error('Copy failed:', e);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
